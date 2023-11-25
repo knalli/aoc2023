@@ -8,7 +8,7 @@ public class Utils {
 	@SuppressWarnings("SpellCheckingInspection")
 	public static <T extends Number> long manhattenDistance(final Point2D<T> a,
 															final Point2D<T> b) {
-		return abs(b.x().longValue() - a.x().longValue()) + abs(b.y().longValue() - a.y().longValue());
+		return abs(b.getX().longValue() - a.getX().longValue() + abs(b.getY().longValue()) - a.getY().longValue());
 	}
 
 }

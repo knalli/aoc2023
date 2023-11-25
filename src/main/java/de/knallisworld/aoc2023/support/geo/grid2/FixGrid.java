@@ -4,11 +4,13 @@ import de.knallisworld.aoc2023.support.geo.Point2D;
 
 import java.lang.reflect.Array;
 
-public class Grid<T> {
+import static java.util.Objects.requireNonNull;
 
-	private T[][] data;
+public class FixGrid<T> {
 
-	public Grid(final Class<T> type, final int initialHeight, final int initialWidth) {
+	private final T[][] data;
+
+	public FixGrid(final Class<T> type, final int initialHeight, final int initialWidth) {
 		this.data = createData(type, initialHeight, initialWidth);
 	}
 
@@ -22,21 +24,20 @@ public class Grid<T> {
 		return data;
 	}
 
-	public Grid<T> setValue(final Point2D<Integer> p, final T value) {
-		return setValue(p.x(), p.y(), value);
+	public void setValue(final Point2D<Integer> p, final T value) {
+		setValue(p.getX(), p.getY(), value);
 	}
 
-	public Grid<T> setValue(final int x, final int y, T value) {
+	public void setValue(final int x, final int y, T value) {
 		data[y][x] = value;
-		return this;
 	}
 
 	public T getValueRequired(final Point2D<Integer> p) {
-		return getValueRequired(p.x(), p.y());
+		return getValueRequired(p.getX(), p.getY());
 	}
 
 	public T getValueRequired(final int x, final int y) {
-		return data[y][x];
+		return requireNonNull(data[y][x]);
 	}
 
 }
