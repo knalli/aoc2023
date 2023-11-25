@@ -23,4 +23,12 @@ class InputReaderTest {
 				.contains("foo")
 				.contains("bar");
 	}
+
+	@Test
+	void readInputFirstLineAsInts() {
+		assertThat(InputReader.readInputFirstLineAsInts(0, "part2"))
+				.isNotNull()
+				.containsExactly(0, 1, 2, 3, 5, 8, 13, 21, 34);
+	}
+
 }

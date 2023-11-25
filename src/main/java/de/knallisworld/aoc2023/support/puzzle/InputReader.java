@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class InputReader {
@@ -15,6 +16,20 @@ public class InputReader {
 		try (final var reader = new BufferedReader(new InputStreamReader(buildInputStream(day, name)))) {
 			return reader.readLine();
 		}
+	}
+
+	@SneakyThrows
+	public static int[] readInputFirstLineAsInts(final int day, final String name) {
+		return readInputFirstLineAsInts(day, name, ",");
+	}
+
+	@SneakyThrows
+	public static int[] readInputFirstLineAsInts(final int day, final String name, final String separator) {
+		return Arrays.stream(readInputFirstLine(day, name).split(separator))
+					 .map(String::strip)
+					 .map(Integer::parseInt)
+					 .mapToInt(d -> d)
+					 .toArray();
 	}
 
 	@SneakyThrows
