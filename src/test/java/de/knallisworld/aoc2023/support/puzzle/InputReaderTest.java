@@ -26,7 +26,11 @@ class InputReaderTest {
 
 	@Test
 	void readInputFirstLineAsInts() {
-		assertThat(InputReader.readInputFirstLineAsInts(0, "part2"))
+		final var part2s = InputReader
+				.readInputFirstLine(0, "part2", InputParser::str2int)
+				.mapToInt(Integer::intValue)
+				.toArray();
+		assertThat(part2s)
 				.isNotNull()
 				.containsExactly(0, 1, 2, 3, 5, 8, 13, 21, 34);
 	}

@@ -5,9 +5,11 @@ import de.knallisworld.aoc2023.support.geo.Point2D;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
 import java.util.stream.Stream;
 
+import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
 
 public class DynGrid<P extends Number, T> {
@@ -76,6 +78,51 @@ public class DynGrid<P extends Number, T> {
 	@SuppressWarnings("MethodDoesntCallSuperMethod")
 	public DynGrid<P, T> clone() {
 		return DynGrid.copyOf(data);
+	}
+
+	public String toString(final BiFunction<Point2D<P>, T, String> renderer) {
+		final var minX = data.keySet()
+							 .stream()
+							 .min(comparing(p -> p.getX().longValue()))
+							 .orElseThrow();
+		final var minY = data.keySet()
+							 .stream()
+							 .min(comparing(p -> p.getY().longValue()))
+							 .orElseThrow();
+		final var maxX = data.keySet()
+							 .stream()
+							 .max(comparing(p -> p.getX().longValue()))
+							 .orElseThrow();
+		final var maxY = data.keySet()
+							 .stream()
+							 .max(comparing(p -> p.getY().longValue()))
+							 .orElseThrow();
+
+		final var sb = new StringBuilder();
+
+		final var topLeft = minX.min(minY);
+		final var bottomRight = maxX.max(maxY);
+
+		topLeft.untilY(bottomRight)
+			   .flatMap(p -> {
+				   final Stream<Optional<Point2D<P>>> concat = Stream.concat(
+						   p.untilX(maxX).map(Optional::of),
+						   Stream.of(Optional.empty())
+				   );
+				   return concat;
+			   })
+			   .forEach(opt -> {
+				   opt.ifPresentOrElse(
+						   p -> {
+							   getValue(p).ifPresent(v -> {
+								   sb.append(renderer.apply(p, v));
+							   });
+						   },
+						   () -> sb.append("\n")
+				   );
+			   });
+
+		return sb.toString();
 	}
 
 }

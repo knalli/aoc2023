@@ -1,11 +1,14 @@
 package de.knallisworld.aoc2023.support.geo;
 
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
+import java.util.ArrayList;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 @Data
+@EqualsAndHashCode(of = {"x", "y"})
 public class Point2D<T extends Number> {
 
 	final T x;
@@ -41,12 +44,67 @@ public class Point2D<T extends Number> {
 		return new Point2D<>(x, y, adder);
 	}
 
+	public static Point2D<Integer> createInt(
+			final int x,
+			final int y
+	) {
+		return new Point2D<>(x, y, Integer::sum);
+	}
+
 	public Point2D(final T x,
 				   final T y,
 				   final BiFunction<T, Integer, T> adder) {
 		this.x = x;
 		this.y = y;
 		this.adder = adder;
+	}
+
+	public Stream<Point2D<T>> untilX(final Point2D<T> other) {
+		var temp = this;
+		final var result = new ArrayList<Point2D<T>>();
+		final var otherLong = other.getX().longValue();
+		while (temp.getX().longValue() <= otherLong) {
+			result.add(temp);
+			temp = createNew(adder.apply(temp.x, 1), temp.y);
+		}
+		return result.stream();
+	}
+
+	public Stream<Point2D<T>> untilY(final Point2D<T> other) {
+		var temp = this;
+		final var result = new ArrayList<Point2D<T>>();
+		final var otherLong = other.getY().longValue();
+		while (temp.getY().longValue() <= otherLong) {
+			result.add(temp);
+			temp = createNew(temp.x, adder.apply(temp.y, 1));
+		}
+		return result.stream();
+	}
+
+	public Point2D<T> min(final Point2D<T> other) {
+		final var x = min(getX(), other.getX());
+		final var y = min(getY(), other.getY());
+		return Point2D.create(x, y);
+	}
+
+	public Point2D<T> max(final Point2D<T> other) {
+		final var x = max(getX(), other.getX());
+		final var y = max(getY(), other.getY());
+		return Point2D.create(x, y);
+	}
+
+	private T min(T a, T b) {
+		if (a.longValue() < b.longValue()) {
+			return a;
+		}
+		return b;
+	}
+
+	private T max(T a, T b) {
+		if (a.longValue() > b.longValue()) {
+			return a;
+		}
+		return b;
 	}
 
 
