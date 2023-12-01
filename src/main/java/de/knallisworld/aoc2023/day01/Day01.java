@@ -3,10 +3,7 @@ package de.knallisworld.aoc2023.day01;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.util.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
@@ -22,18 +19,14 @@ public class Day01 {
 
 	public static void main(String[] args) {
 		printHeader(1);
-		printSolution(1, () -> {
-			return sumAllDigits(
-					readInputLines(1, "part1"),
-					Day01::extractDigitsFromString
-			);
-		});
-		printSolution(1, () -> {
-			return sumAllDigits(
-					readInputLines(1, "part1"),
-					Day01::extractDigitsFromString2
-			);
-		});
+		printSolution(1, () -> sumAllDigits(
+				readInputLines(1, "part1"),
+				Day01::extractDigitsFromString
+		));
+		printSolution(2, () -> sumAllDigits(
+				readInputLines(1, "part1"),
+				Day01::extractDigitsFromString2
+		));
 	}
 
 	record Repl(String key, String value) {
@@ -51,6 +44,12 @@ public class Day01 {
 			new Repl("nine", "9")
 	);
 
+	static final Map<String, Pattern> PATTERN_CACHE = new HashMap<>();
+
+	static {
+		NAMED_DIGITS.forEach(repl -> PATTERN_CACHE.put(repl.key(), Pattern.compile(repl.key(), Pattern.DOTALL)));
+	}
+
 	private static int sumAllDigits(final List<String> input,
 									final Function<String, String> extractor) {
 		return input
@@ -62,6 +61,7 @@ public class Day01 {
 					var result = "";
 					final var parts = fullStr.split("");
 					if (parts.length == 1) {
+						// edge case: only one digit
 						result = parts[0] + parts[0];
 					} else {
 						result = parts[0] + parts[parts.length - 1];
@@ -86,20 +86,20 @@ public class Day01 {
 		record Piece(int pos, String val) {
 		}
 		final var temp = new ArrayList<Piece>();
+		// collect all simple digits, at their position
 		for (var i = 0; i < str.length(); i++) {
 			if (onlyDigits(str.charAt(i))) {
 				temp.add(new Piece(i, str.substring(i, i + 1)));
 			}
 		}
-		final var patternCache = new HashMap<String, Pattern>();
+		// collect digit words, at their position
 		NAMED_DIGITS.forEach(repl -> {
-			final var pattern = patternCache.computeIfAbsent(repl.key(), k -> Pattern.compile(k, Pattern.DOTALL));
+			final var pattern = PATTERN_CACHE.get(repl.key());
 			pattern.matcher(str)
 				   .results()
-				   .forEach(s -> {
-					   temp.add(new Piece(s.start(), repl.value()));
-				   });
+				   .forEach(s -> temp.add(new Piece(s.start(), repl.value())));
 		});
+		// combine all digits, ordered by the position
 		return extractDigitsFromString(
 				temp.stream()
 					.sorted(comparing(Piece::pos))
