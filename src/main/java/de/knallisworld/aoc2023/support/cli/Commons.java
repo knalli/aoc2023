@@ -16,7 +16,10 @@ public class Commons {
 
 	public static void printSolution(final Serializable part,
 									 final Supplier<Serializable> solutionGet) {
-		System.out.printf("🎉 Solution of part %s: %s%n", part, solutionGet.get());
+		final var started = System.currentTimeMillis();
+		final var result = solutionGet.get();
+		final var used = System.currentTimeMillis() - started;
+		System.out.printf("🎉 Solution of part %s took %7.3fs: %s%n", part, used/1000D, result);
 	}
 
 }
