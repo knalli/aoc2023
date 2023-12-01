@@ -16,7 +16,7 @@ public class Commons {
 
 	public static void printSolution(final Serializable part,
 									 final Supplier<Serializable> solutionGet) {
-		System.out.printf("Solution of part %s: %s%n", part, solutionGet.get());
+		System.out.printf("🎉 Solution of part %s: %s%n", part, solutionGet.get());
 	}
 
 }
