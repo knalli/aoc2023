@@ -7,7 +7,6 @@ target/
 .idea/**
 !.idea/codeStyles**
 !.idea/encodings.xml
-!.idea/misc.xml
 *.iws
 *.iml
 *.ipr
