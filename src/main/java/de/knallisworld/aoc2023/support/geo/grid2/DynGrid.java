@@ -3,6 +3,7 @@ package de.knallisworld.aoc2023.support.geo.grid2;
 import de.knallisworld.aoc2023.support.geo.Point2D;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -60,8 +61,12 @@ public class DynGrid<P extends Number, T> {
 	}
 
 	public Stream<Point2D<P>> getAdjacents8(final Point2D<P> p) {
+		return getAdjacents8(p, false);
+	}
+
+	public Stream<Point2D<P>> getAdjacents8(final Point2D<P> p, boolean includeEmpty) {
 		return p.getAdjacents8()
-				.filter(this::has);
+				.filter(p1 -> includeEmpty || has(p1));
 	}
 
 	public long count() {
@@ -81,22 +86,10 @@ public class DynGrid<P extends Number, T> {
 	}
 
 	public String toString(final BiFunction<Point2D<P>, T, String> renderer) {
-		final var minX = data.keySet()
-							 .stream()
-							 .min(comparing(p -> p.getX().longValue()))
-							 .orElseThrow();
-		final var minY = data.keySet()
-							 .stream()
-							 .min(comparing(p -> p.getY().longValue()))
-							 .orElseThrow();
-		final var maxX = data.keySet()
-							 .stream()
-							 .max(comparing(p -> p.getX().longValue()))
-							 .orElseThrow();
-		final var maxY = data.keySet()
-							 .stream()
-							 .max(comparing(p -> p.getY().longValue()))
-							 .orElseThrow();
+		final var minX = getMinX();
+		final var minY = getMinY();
+		final var maxX = getMaxX();
+		final var maxY = getMaxY();
 
 		final var sb = new StringBuilder();
 
@@ -123,6 +116,147 @@ public class DynGrid<P extends Number, T> {
 			   });
 
 		return sb.toString();
+	}
+
+	private Point2D<P> getMinY() {
+		return data.keySet()
+				   .stream()
+				   .min(comparing(p -> p.getY().longValue()))
+				   .orElseThrow();
+	}
+
+	private Point2D<P> getMaxY() {
+		return data.keySet()
+				   .stream()
+				   .max(comparing(p -> p.getY().longValue()))
+				   .orElseThrow();
+	}
+
+	private Point2D<P> getMaxX() {
+		return data.keySet()
+				   .stream()
+				   .max(comparing(p -> p.getX().longValue()))
+				   .orElseThrow();
+	}
+
+	private Point2D<P> getMinX() {
+		return data.keySet()
+				   .stream()
+				   .min(comparing(p -> p.getX().longValue()))
+				   .orElseThrow();
+	}
+
+	public FieldsView<P, T> fields() {
+		return new FieldsView<>(this);
+	}
+
+	public static class FieldsView<P extends Number, T> {
+
+		private final DynGrid<P, T> grid;
+
+		public FieldsView(DynGrid<P, T> grid) {
+			this.grid = grid;
+		}
+
+		public Stream<Field<P, Optional<T>>> withinRowRangeInclusive(final Point2D<P> begin,
+																	 final Point2D<P> end) {
+			return Stream
+					.iterate(
+							begin,
+							p -> {
+								// next possible?
+								return p.getX().longValue() <= end.getX().longValue();
+							},
+							Point2D::right
+					)
+					.map(p -> Field.create(p, grid.getValue(p)));
+		}
+
+		public Stream<Field<P, T>> groupInRow(final Point2D<P> p) {
+			// find left start
+			var start = p;
+			while (grid.has(start.left())) {
+				start = start.left();
+			}
+			// find right end
+			var end = p;
+			while (grid.has(end.right())) {
+				end = end.right();
+			}
+			return grid
+					.fields()
+					.withinRowRangeInclusive(start, end)
+					.flatMap(a -> a.value().stream()
+								   .map(v -> Field.create(a.position(), v)));
+		}
+
+		public record Row<P extends Number, T>(
+				P row,
+				List<Field<P, Optional<T>>> fields
+		) {
+
+			public List<Field<P, T>> filledFields() {
+				return fields.stream()
+							 .flatMap(f -> f.value()
+											.stream()
+											.map(v -> Field.create(f.position(), v)))
+							 .toList();
+			}
+
+		}
+
+		public record Field<P extends Number, T>(
+				Point2D<P> position,
+				T value
+		) {
+
+			public static <P extends Number, T> Field<P, T> create(Point2D<P> position, T value) {
+				return new Field<>(position, value);
+			}
+
+		}
+
+		public Stream<FieldsView.Field<P, T>> stream() {
+			return Map.copyOf(grid.data)
+					  .entrySet()
+					  .stream()
+					  .map(e -> new Field<>(e.getKey(), e.getValue()));
+		}
+
+		public Stream<Row<P, T>> rows() {
+			final var minX = grid.getMinX();
+			final var maxX = grid.getMaxX();
+			final var minY = grid.getMinY();
+			final var maxY = grid.getMaxY();
+			final var topLeft = minX.min(minY);
+			final var bottomRight = maxX.max(maxY);
+			return Stream.iterate(
+								 topLeft,
+								 p -> {
+									 // next possible?
+									 return p.getY().longValue() <= maxY.getY().longValue();
+								 },
+								 Point2D::down
+						 )
+						 .map(currentY -> {
+							 final var list = Stream
+									 .iterate(
+											 currentY,
+											 p -> {
+												 // next possible?
+												 return p.getX().longValue() <= bottomRight.getX().longValue();
+											 },
+											 Point2D::right
+									 )
+									 .map(p -> Field.create(p, grid.getValue(p)))
+									 .toList();
+							 return new Row<>(
+									 currentY.getY(),
+									 list
+							 );
+						 });
+		}
+
 	}
 
 }
