@@ -19,7 +19,16 @@ public class Commons {
 		final var started = System.currentTimeMillis();
 		final var result = solutionGet.get();
 		final var used = System.currentTimeMillis() - started;
-		System.out.printf("🎉 Solution of part %s took %7.3fs: %s%n", part, used/1000D, result);
+		System.out.printf("🎉 Solution of part %s took %7.3fs: %s%n", part, used / 1000D, result);
+	}
+
+	public static <T> T compileObject(final Serializable description,
+									  final Supplier<T> compiler) {
+		final var started = System.currentTimeMillis();
+		final var result = compiler.get();
+		final var used = System.currentTimeMillis() - started;
+		System.out.printf("💪 Compiling object '%s' took %7.3fs%n", description, used / 1000D);
+		return result;
 	}
 
 }
