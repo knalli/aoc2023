@@ -4,6 +4,7 @@ import lombok.extern.log4j.Log4j2;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
@@ -41,6 +42,44 @@ public class Day05 {
 	}
 
 	record Mapping(long dst, long src, long len) {
+	}
+
+	static class ExcludeList extends LinkedList<Exclude> {
+
+		@Override
+		public boolean add(final Exclude newItem) {
+			for (final var item : this) {
+				if (item.includes(newItem)) {
+					// skip it
+					return false;
+				}
+			}
+			final var obsoleteItems = new LinkedList<Exclude>();
+			for (final var item : this) {
+				if (newItem.includes(item)) {
+					obsoleteItems.add(item);
+				}
+			}
+			removeAll(obsoleteItems);
+			return super.add(newItem);
+		}
+
+	}
+
+	record Exclude(long src, long len) {
+
+		public boolean includes(final Exclude other) {
+			if (src <= other.src) {
+				if (len == Long.MAX_VALUE) {
+					return true;
+				} else if (other.len == Long.MAX_VALUE) {
+					return false;
+				}
+				return src + len >= other.src + other.len;
+			}
+			return false;
+		}
+
 	}
 
 	static Input parseInput(final List<String> lines) {
@@ -97,7 +136,10 @@ public class Day05 {
 		return "min = %d".formatted(min);
 	}
 
-	// took 727,332s in my system: 9622622
+	// 9622622
+	// took 727s (parallel)
+	// took 930s (parallel + lock)
+	// took 196s (non-parallel + lock)
 	static String part2(final Input input) {
 
 		// pre-compute for fast access
@@ -108,6 +150,7 @@ public class Day05 {
 				.collect(toMap(Group::src, identity()));
 
 		final var min = new AtomicReference<>(Long.MAX_VALUE);
+		final var lock = new ReentrantLock();
 
 		IntStream
 				.range(0, input.seeds().size() / 2)
@@ -121,9 +164,129 @@ public class Day05 {
 				.parallel()
 				.forEach(seed -> {
 					final var r = findSeedToLocation(seed, groupMappings);
+					lock.lock();
 					if (r < min.get()) {
 						min.set(r);
 					}
+					lock.unlock();
+				});
+
+		return "min = %d".formatted(min.get());
+	}
+
+	static String part2_wip(final Input input) {
+
+		// pre-compute for fast access
+		final var groupMappings = input
+				.groups()
+				.values()
+				.stream()
+				.collect(toMap(Group::src, identity()));
+
+		final var min = new AtomicReference<>(Long.MAX_VALUE);
+
+		final var groupMappingsCopy = new HashMap<>(groupMappings);
+		final var excludeMappings = new HashMap<Type, List<Exclude>>();
+		Arrays.stream(Type.values()).forEach(t -> excludeMappings.put(t, new ExcludeList()));
+
+		final var lock = new ReentrantLock();
+
+		IntStream
+				.range(0, input.seeds().size() / 2)
+				.mapToLong(i -> (long) i)
+				.flatMap(n -> {
+					final var i = (int) n * 2;
+					final var start = input.seeds().get(i);
+					final var end = start + input.seeds().get(i + 1);
+					return LongStream.range(start, end);
+				})
+				.parallel()
+				.filter(seed -> {
+							return excludeMappings
+									.computeIfAbsent(Type.seed, _ -> new ExcludeList())
+									.stream()
+									.noneMatch(e -> e.src <= seed && seed < e.src + e.len);
+						}
+				)
+				.forEach(seed -> {
+					final var result = findSeedToLocation(seed, groupMappingsCopy);
+					if (result >= min.get()) {
+						return;
+					}
+
+					lock.lock();
+					if (result < min.get()) {
+						min.set(result);
+
+						// reduce options
+						var tmpType = Type.location;
+						excludeMappings.get(tmpType).add(new Exclude(result, Long.MAX_VALUE));
+						while (tmpType != Type.seed) {
+							final var dstType = tmpType;
+							final var ctx = groupMappingsCopy
+									.entrySet()
+									.stream()
+									.filter(e -> e.getValue().dst() == dstType)
+									.findFirst()
+									.map(Map.Entry::getValue)
+									.orElseThrow();
+
+							final var newMappings = new ArrayList<Mapping>();
+							final var newExcludes = new ExcludeList();
+							newMappings.addAll(ctx.mappings());
+							excludeMappings.get(dstType).forEach(excludeMapping -> {
+								for (final var ctxMapping : List.copyOf(newMappings)) {
+									if (ctxMapping.dst < excludeMapping.src) {
+										if (ctxMapping.dst + ctxMapping.len <= excludeMapping.src) {
+											// as-is
+										} else if (excludeMapping.len == Long.MAX_VALUE) {
+											newMappings.remove(ctxMapping);
+											final var len = excludeMapping.src - ctxMapping.dst;
+											if (len > 0) {
+												newMappings.add(new Mapping(ctxMapping.dst, ctxMapping.src, len));
+											}
+											newExcludes.add(new Exclude(ctxMapping.src + len, ctxMapping.len - len));
+										} else {
+											newMappings.remove(ctxMapping);
+											final var len = excludeMapping.src - ctxMapping.dst;
+											if (len > 0) {
+												newMappings.add(new Mapping(ctxMapping.dst, ctxMapping.src, len));
+											}
+											final var excludeLen = Math.min(ctxMapping.len - len, excludeMapping.len);
+											newExcludes.add(new Exclude(ctxMapping.src + len, excludeLen));
+											final var restLen = ctxMapping.len - len - excludeLen;
+											if (restLen > 0) {
+												newMappings.add(new Mapping(ctxMapping.dst + len + excludeLen, ctxMapping.src + len + excludeLen, restLen));
+											}
+										}
+									} else {
+										if (excludeMapping.len == Long.MAX_VALUE) {
+											newMappings.remove(ctxMapping);
+											newExcludes.add(new Exclude(ctxMapping.src, ctxMapping.len));
+										} else if (ctxMapping.dst + ctxMapping.len < excludeMapping.src + excludeMapping.len) {
+											newMappings.remove(ctxMapping);
+											final var len = ctxMapping.dst - excludeMapping.src;
+											if (len > 0) {
+												newExcludes.add(new Exclude(ctxMapping.src, len));
+											}
+											newMappings.add(new Mapping(ctxMapping.dst + len, ctxMapping.src + len, ctxMapping.len - len));
+										} else {
+											newMappings.remove(ctxMapping);
+											newExcludes.add(new Exclude(ctxMapping.src, ctxMapping.len));
+										}
+									}
+								}
+							});
+
+
+							groupMappingsCopy.put(ctx.src(), new Group(ctx.src(), ctx.dst(), List.copyOf(newMappings)));
+							excludeMappings.put(ctx.src(), newExcludes);
+							tmpType = ctx.src();
+						}
+						System.out.println("min = " + min.get());
+					}
+					lock.unlock();
+
 				});
 
 		return "min = %d".formatted(min.get());
