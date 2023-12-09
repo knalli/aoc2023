@@ -18,4 +18,15 @@ public class InputParser {
 					 .map(Integer::parseInt);
 	}
 
+	public static Stream<Long> str2long(final String str) {
+		return str2long(str, ",");
+	}
+
+	public static Stream<Long> str2long(final String str, final String separator) {
+		return Arrays.stream(str.split(separator))
+					 .map(String::strip)
+					 .filter(StringUtils::hasText)
+					 .map(Long::parseLong);
+	}
+
 }
