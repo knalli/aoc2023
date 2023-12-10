@@ -21,7 +21,7 @@ public class FixGrid<T> {
 	static <T> T[][] createData(Class<T> type, int initialHeight, int initialWidth) {
 		final var arrayType = (Class<T[]>) type.arrayType();
 		T[][] data = (T[][]) Array.newInstance(arrayType, initialHeight);
-		for (int i = 0; i < initialWidth; i++) {
+		for (int i = 0; i < initialHeight; i++) {
 			data[i] = (T[]) Array.newInstance(type, initialWidth);
 		}
 		return data;
