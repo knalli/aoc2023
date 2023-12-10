@@ -3,10 +3,10 @@ package de.knallisworld.aoc2023.support.geo.grid2;
 import de.knallisworld.aoc2023.support.geo.Point2D;
 
 import java.lang.reflect.Array;
-import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -18,10 +18,53 @@ import static java.util.function.Predicate.not;
 
 public class FixGrid<T> {
 
+	private final Class<T> type;
 	private final T[][] data;
 
 	public FixGrid(final Class<T> type, final int initialHeight, final int initialWidth) {
+		this.type = type;
 		this.data = createData(type, initialHeight, initialWidth);
+	}
+
+	public static <T> FixGrid<T> create(final Class<T> type, final int initialHeight, final int initialWidth) {
+		return new FixGrid<>(type, initialHeight, initialWidth);
+	}
+
+	public static <T> FixGrid<T> extrapolated(final FixGrid<T> src,
+											  final int scale,
+											  final BiConsumer<FieldsView.Field<T>, FixGrid<T>> valueExtrapolator) {
+		if (scale < 1) {
+			throw new IllegalArgumentException("scale must be greater than 1");
+		}
+		final var dst = new FixGrid<>(src.type, src.data.length * scale, src.data[0].length * 3);
+		IntStream.range(0, src.data.length)
+				 .forEach(srcY -> {
+					 IntStream.range(0, src.data[srcY].length)
+							  .forEach(srcX -> {
+								  final var dstOffset = Point2D.create(srcX * scale, srcY * scale);
+								  final var dstCenter = dstOffset.downRight();
+								  dst.setValue(dstCenter, src.getValueRequired(srcX, srcY));
+
+								  final var temp = FixGrid.create(src.type, scale, scale);
+								  valueExtrapolator.accept(
+										  new FieldsView.Field<>(
+												  dstCenter,
+												  dst.getValueRequired(dstCenter)
+										  ),
+										  temp
+								  );
+
+								  temp.fields()
+									  .forEach(field -> {
+										  dst.setValue(
+												  dstOffset.getX() + field.pos().getX(),
+												  dstOffset.getY() + field.pos().getY(),
+												  field.value()
+										  );
+									  });
+							  });
+				 });
+		return dst;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -78,6 +121,20 @@ public class FixGrid<T> {
 
 	public FieldsView<T> fields() {
 		return new FieldsView<>(this);
+	}
+
+	public void fill(T value) {
+		IntStream.range(0, data.length)
+				 .forEach(y -> IntStream.range(0, data[y].length)
+										.forEach(x -> data[y][x] = value));
+	}
+
+	public int getHeight() {
+		return data.length;
+	}
+
+	public int getWidth() {
+		return data[0].length;
 	}
 
 	public static class FieldsView<T> {
