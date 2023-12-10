@@ -36,7 +36,7 @@ public class FixGrid<T> {
 		if (scale < 1) {
 			throw new IllegalArgumentException("scale must be greater than 1");
 		}
-		final var dst = new FixGrid<>(src.type, src.data.length * scale, src.data[0].length * 3);
+		final var dst = new FixGrid<>(src.type, src.data.length * scale, src.data[0].length * scale);
 		IntStream.range(0, src.data.length)
 				 .forEach(srcY -> {
 					 IntStream.range(0, src.data[srcY].length)
