@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
@@ -86,6 +87,11 @@ public class DynGrid<P extends Number, T> {
 	}
 
 	public String toString(final BiFunction<Point2D<P>, T, String> renderer) {
+		return toString(renderer, () -> "");
+	}
+
+	public String toString(final BiFunction<Point2D<P>, T, String> renderer,
+						   final Supplier<String> emptyRenderer) {
 		final var minX = getMinX();
 		final var minY = getMinY();
 		final var maxX = getMaxX();
@@ -107,9 +113,12 @@ public class DynGrid<P extends Number, T> {
 			   .forEach(opt -> {
 				   opt.ifPresentOrElse(
 						   p -> {
-							   getValue(p).ifPresent(v -> {
-								   sb.append(renderer.apply(p, v));
-							   });
+							   getValue(p).ifPresentOrElse(
+									   v -> {
+										   sb.append(renderer.apply(p, v));
+									   },
+									   () -> sb.append(emptyRenderer.get())
+							   );
 						   },
 						   () -> sb.append("\n")
 				   );
@@ -148,6 +157,22 @@ public class DynGrid<P extends Number, T> {
 
 	public FieldsView<P, T> fields() {
 		return new FieldsView<>(this);
+	}
+
+	public long minY() {
+		return getMinY().getY().longValue();
+	}
+
+	public long maxY() {
+		return getMaxY().getY().longValue();
+	}
+
+	public long minX() {
+		return getMinX().getX().longValue();
+	}
+
+	public long maxX() {
+		return getMaxX().getX().longValue();
 	}
 
 	public static class FieldsView<P extends Number, T> {
