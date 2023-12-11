@@ -5,8 +5,8 @@ import lombok.EqualsAndHashCode;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -17,7 +17,7 @@ import static java.util.Objects.requireNonNullElse;
 @EqualsAndHashCode(of = {"x", "y"})
 public class Point2D<T extends Number> {
 
-	static final Map<Number, Map<Number, Point2D<?>>> CACHE = new HashMap<>();
+	static final Map<Number, Map<Number, Point2D<?>>> CACHE = new WeakHashMap<>();
 
 	static final BiFunction<Number, Integer, Number> DEFAULT_ADDER = (t, addingValue) -> {
 		if (t instanceof Integer i) {
@@ -42,7 +42,7 @@ public class Point2D<T extends Number> {
 	private static <T extends Number> Point2D<T> lookupCache(final T x,
 															 final T y,
 															 final Supplier<Point2D<T>> creator) {
-		return (Point2D<T>) CACHE.computeIfAbsent(x, _ -> new HashMap<>())
+		return (Point2D<T>) CACHE.computeIfAbsent(x, _ -> new WeakHashMap<>())
 								 .computeIfAbsent(y, _ -> creator.get());
 	}
 
