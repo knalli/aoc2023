@@ -172,9 +172,13 @@ public class Point2D<T extends Number> {
 	}
 
 	public Point2D<T> up() {
+		return up(1);
+	}
+
+	public Point2D<T> up(final int amount) {
 		return createNew(
 				x,
-				adder().apply(y, -1)
+				adder().apply(y, -amount)
 		);
 	}
 
@@ -193,16 +197,24 @@ public class Point2D<T extends Number> {
 	}
 
 	public Point2D<T> right() {
+		return right(1);
+	}
+
+	public Point2D<T> right(final int amount) {
 		return createNew(
-				adder().apply(x, 1),
+				adder().apply(x, amount),
 				y
 		);
 	}
 
 	public Point2D<T> down() {
+		return down(1);
+	}
+
+	public Point2D<T> down(final int amount) {
 		return createNew(
 				x,
-				adder().apply(y, +1)
+				adder().apply(y, amount)
 		);
 	}
 
@@ -221,8 +233,12 @@ public class Point2D<T extends Number> {
 	}
 
 	public Point2D<T> left() {
+		return left(1);
+	}
+
+	public Point2D<T> left(final int amount) {
 		return createNew(
-				adder().apply(x, -1),
+				adder().apply(x, -amount),
 				y
 		);
 	}
@@ -230,6 +246,13 @@ public class Point2D<T extends Number> {
 	@Override
 	public String toString() {
 		return "(%s/%s)".formatted(x, y);
+	}
+
+	public Point2D<T> add(final Point2D<T> other) {
+		return createNew(
+				adder().apply(x, other.getX().intValue()),
+				adder().apply(y, other.getY().intValue())
+		);
 	}
 
 }
