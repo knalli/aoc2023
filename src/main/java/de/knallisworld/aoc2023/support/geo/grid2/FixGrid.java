@@ -77,6 +77,12 @@ public class FixGrid<T> {
 		return data;
 	}
 
+	public static <T> FixGrid<T> copy(FixGrid<T> from) {
+		final var clone = create(from.type, from.getHeight(), from.getWidth());
+		from.fields().forEach(f -> clone.setValue(f.pos, f.value));
+		return clone;
+	}
+
 	public void setValue(final Point2D<Integer> p, final T value) {
 		setValue(p.getX(), p.getY(), value);
 	}
