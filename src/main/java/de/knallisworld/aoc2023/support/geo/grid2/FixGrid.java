@@ -1,8 +1,11 @@
 package de.knallisworld.aoc2023.support.geo.grid2;
 
 import de.knallisworld.aoc2023.support.geo.Point2D;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Optional;
@@ -21,9 +24,12 @@ public class FixGrid<T> {
 	private final Class<T> type;
 	private final T[][] data;
 
+	private final TransformView<T> transformView;
+
 	public FixGrid(final Class<T> type, final int initialHeight, final int initialWidth) {
 		this.type = type;
 		this.data = createData(type, initialHeight, initialWidth);
+		this.transformView = new TransformView<>(this);
 	}
 
 	public static <T> FixGrid<T> create(final Class<T> type, final int initialHeight, final int initialWidth) {
@@ -129,6 +135,10 @@ public class FixGrid<T> {
 		return new FieldsView<>(this);
 	}
 
+	public TransformView<T> transform() {
+		return transformView;
+	}
+
 	public void fill(T value) {
 		IntStream.range(0, data.length)
 				 .forEach(y -> IntStream.range(0, data[y].length)
@@ -157,6 +167,20 @@ public class FixGrid<T> {
 		public Stream<Field<T>> stream() {
 			return IntStream
 					.range(0, grid.data.length)
+					.boxed()
+					.flatMap(y -> IntStream
+							.range(0, grid.data[y].length)
+							.boxed()
+							.map(x -> Point2D.create(x, y))
+							.filter(grid::hasValue)
+							.map(p -> new Field<>(p, grid.getValueRequired(p)))
+					);
+		}
+
+		public Stream<Field<T>> row(final int searchY) {
+			return IntStream
+					.range(0, grid.data.length)
+					.filter(y -> y == searchY)
 					.boxed()
 					.flatMap(y -> IntStream
 							.range(0, grid.data[y].length)
@@ -201,6 +225,65 @@ public class FixGrid<T> {
 
 	}
 
+	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+	public static class TransformView<T> {
+
+		private final FixGrid<T> grid;
+
+		@SuppressWarnings("UnusedReturnValue")
+		public TransformView<T> rotateRight() {
+			return rotateRight(1);
+		}
+
+		public TransformView<T> rotateRight(final int iterations) {
+			if (grid.getHeight() != grid.getWidth()) {
+				throw new IllegalStateException("grid dimension not supported");
+			}
+			final var n = grid.getHeight();
+			for (var a = 0; a < iterations; a++) {
+				for (int layer = 0; layer < n / 2; layer++) {
+					final var last = n - 1 - layer;
+					for (int i = layer; i < last; i++) {
+						final var offset = i - layer;
+						final var top = grid.getValueRequired(layer, i);
+						grid.setValue(layer, i, grid.getValueRequired(last - offset, layer));
+						grid.setValue(last - offset, layer, grid.getValueRequired(last, last - offset));
+						grid.setValue(last, last - offset, grid.getValueRequired(i, last));
+						grid.setValue(i, last, top);
+					}
+				}
+			}
+			return this;
+		}
+
+		@SuppressWarnings("UnusedReturnValue")
+		public TransformView<T> rotateLeft() {
+			return rotateLeft(1);
+		}
+
+		public TransformView<T> rotateLeft(final int iterations) {
+			if (grid.getHeight() != grid.getWidth()) {
+				throw new IllegalStateException("grid dimension not supported");
+			}
+			final var n = grid.getHeight();
+			for (var a = 0; a < iterations; a++) {
+				for (int layer = 0; layer < n / 2; layer++) {
+					final var last = n - 1 - layer;
+					for (int i = layer; i < last; i++) {
+						final var offset = i - layer;
+						final var top = grid.getValueRequired(layer, i);
+						grid.setValue(layer, i, grid.getValueRequired(i, last));
+						grid.setValue(i, last, grid.getValueRequired(last, last - offset));
+						grid.setValue(last, last - offset, grid.getValueRequired(last - offset, layer));
+						grid.setValue(last - offset, layer, top);
+					}
+				}
+			}
+			return this;
+		}
+
+	}
+
 	public String toString(final BiFunction<Point2D<Integer>, T, String> renderer) {
 
 		final var sb = new StringBuilder();
@@ -217,6 +300,19 @@ public class FixGrid<T> {
 				 });
 
 		return sb.toString();
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
+		FixGrid<?> fixGrid = (FixGrid<?>) o;
+		return Arrays.deepEquals(data, fixGrid.data);
+	}
+
+	@Override
+	public int hashCode() {
+		return Arrays.deepHashCode(data);
 	}
 
 }
