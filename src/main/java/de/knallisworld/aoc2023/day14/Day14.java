@@ -113,7 +113,6 @@ public class Day14 {
 					  // skip with knowledge
 					  final var cycleLen = i - cache.get(keyGen.get());
 					  final var rounds = (max - 1 - i) / cycleLen;
-					  System.out.printf("Cycle found: i=%d len=%d rounds=%d%n", i, cycleLen, rounds);
 					  return LongStream.range(i + 1 + (cycleLen * rounds), max);
 				  })
 				  .forEach(_ -> cycle.run());
