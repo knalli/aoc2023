@@ -223,6 +223,32 @@ public class FixGrid<T> {
 					.filter(grid::hasValue);
 		}
 
+		public Stream<Point2D<Integer>> topEdge() {
+			return IntStream.range(0, grid.getWidth())
+							.boxed()
+							.map(x -> Point2D.create(x, 0));
+		}
+
+		public Stream<Point2D<Integer>> bottomEdge() {
+			final var y = grid.getHeight() - 1;
+			return IntStream.range(0, grid.getWidth())
+							.boxed()
+							.map(x -> Point2D.create(x, y));
+		}
+
+		public Stream<Point2D<Integer>> leftEdge() {
+			return IntStream.range(0, grid.getHeight())
+							.boxed()
+							.map(y -> Point2D.create(0, y));
+		}
+
+		public Stream<Point2D<Integer>> rightEdge() {
+			final var x = grid.getWidth() - 1;
+			return IntStream.range(0, grid.getHeight())
+							.boxed()
+							.map(y -> Point2D.create(x, y));
+		}
+
 	}
 
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
