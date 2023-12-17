@@ -139,6 +139,24 @@ public class FixGrid<T> {
 		return transformView;
 	}
 
+	public FixGrid<T> sub(final Point2D<Integer> topLeft, final Point2D<Integer> bottomRight) {
+		final var offsetY = Math.max(topLeft.getY(), 0);
+		final var offsetX = Math.max(topLeft.getX(), 0);
+		final var limitY = Math.min(bottomRight.getY(), getHeight()-1);
+		final var limitX = Math.min(bottomRight.getX(), getWidth()-1);
+		final var result = FixGrid.create(
+				type,
+				limitY - offsetY,
+				limitX - offsetX
+		);
+		for (var y = offsetY; y <= limitY; y++) {
+			for (var x = offsetX; x <= limitX; x++) {
+				result.setValue(x - offsetX, y - offsetY, getValueRequired(x, y));
+			}
+		}
+		return result;
+	}
+
 	public void fill(T value) {
 		IntStream.range(0, data.length)
 				 .forEach(y -> IntStream.range(0, data[y].length)
