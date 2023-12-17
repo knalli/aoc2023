@@ -1,6 +1,7 @@
 package de.knallisworld.aoc2023.day16;
 
 import de.knallisworld.aoc2023.support.geo.Point2D;
+import de.knallisworld.aoc2023.support.geo.grid2.Direction;
 import de.knallisworld.aoc2023.support.geo.grid2.FixGrid;
 import lombok.extern.log4j.Log4j2;
 
@@ -39,43 +40,6 @@ public class Day16 {
 		@Override
 		public String toString() {
 			return v;
-		}
-
-	}
-
-	enum Direction {
-
-		North(Point2D.create(0, -1)),
-		East(Point2D.create(1, 0)),
-		South(Point2D.create(0, 1)),
-		West(Point2D.create(-1, 0));
-
-		private final Point2D<Integer> offset;
-
-		Direction(Point2D<Integer> offset) {
-			this.offset = offset;
-		}
-
-		public Point2D<Integer> offset() {
-			return offset;
-		}
-
-		public Direction left() {
-			return switch (this) {
-				case North -> West;
-				case West -> South;
-				case South -> East;
-				case East -> North;
-			};
-		}
-
-		public Direction right() {
-			return switch (this) {
-				case North -> East;
-				case East -> South;
-				case South -> West;
-				case West -> North;
-			};
 		}
 
 	}
@@ -124,7 +88,7 @@ public class Day16 {
 			switch (grid.getValueRequired(item.pos)) {
 				case Emtpy -> {
 					// .
-					q.add(new Item(item.pos.add(item.dir.offset), item.dir));
+					q.add(new Item(item.pos.add(item.dir.offset()), item.dir));
 				}
 				case MirrorR -> {
 					// /
@@ -132,7 +96,7 @@ public class Day16 {
 						case North, South -> item.dir.right();
 						case East, West -> item.dir.left();
 					};
-					q.add(new Item(item.pos.add(nextDir.offset), nextDir));
+					q.add(new Item(item.pos.add(nextDir.offset()), nextDir));
 				}
 				case MirrorL -> {
 					// \
@@ -140,16 +104,16 @@ public class Day16 {
 						case North, South -> item.dir.left();
 						case East, West -> item.dir.right();
 					};
-					q.add(new Item(item.pos.add(nextDir.offset), nextDir));
+					q.add(new Item(item.pos.add(nextDir.offset()), nextDir));
 				}
 				case SplitterH -> {
 					// -
 					switch (item.dir) {
-						case East, West -> q.add(new Item(item.pos.add(item.dir.offset), item.dir));
+						case East, West -> q.add(new Item(item.pos.add(item.dir.offset()), item.dir));
 						case North, South -> {
 							Set.of(item.dir.left(), item.dir.right())
 							   .forEach(nextDir -> {
-								   q.add(new Item(item.pos.add(nextDir.offset), nextDir));
+								   q.add(new Item(item.pos.add(nextDir.offset()), nextDir));
 							   });
 						}
 					}
@@ -157,11 +121,11 @@ public class Day16 {
 				case SplitterV -> {
 					// |
 					switch (item.dir) {
-						case North, South -> q.add(new Item(item.pos.add(item.dir.offset), item.dir));
+						case North, South -> q.add(new Item(item.pos.add(item.dir.offset()), item.dir));
 						case East, West -> {
 							Set.of(item.dir.left(), item.dir.right())
 							   .forEach(nextDir -> {
-								   q.add(new Item(item.pos.add(nextDir.offset), nextDir));
+								   q.add(new Item(item.pos.add(nextDir.offset()), nextDir));
 							   });
 						}
 					}
