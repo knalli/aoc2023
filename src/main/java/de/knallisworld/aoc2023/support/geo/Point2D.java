@@ -243,6 +243,13 @@ public class Point2D<T extends Number> {
 		);
 	}
 
+	public Point2D<T> times(final int amount) {
+		return createNew(
+				adder().apply(x, (amount - 1) * x.intValue()),
+				adder().apply(y, (amount - 1) * y.intValue())
+		);
+	}
+
 	@Override
 	public String toString() {
 		return "(%s/%s)".formatted(x, y);

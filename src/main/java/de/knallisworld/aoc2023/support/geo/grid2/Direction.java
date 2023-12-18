@@ -1,6 +1,5 @@
 package de.knallisworld.aoc2023.support.geo.grid2;
 
-import de.knallisworld.aoc2023.day16.Day16;
 import de.knallisworld.aoc2023.support.geo.Point2D;
 
 public enum Direction {
@@ -35,6 +34,15 @@ public enum Direction {
 			case East -> South;
 			case South -> West;
 			case West -> North;
+		};
+	}
+
+	public Direction flip() {
+		return switch (this) {
+			case North -> South;
+			case East -> West;
+			case South -> North;
+			case West -> East;
 		};
 	}
 

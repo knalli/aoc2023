@@ -89,6 +89,19 @@ public class FixGrid<T> {
 		return clone;
 	}
 
+	public static <T> FixGrid<T> of(final DynGrid<Integer, T> from,
+									final Class<T> type,
+									final T defaultValue) {
+		final var offsetX = (int) Math.min(from.minX(), 0) * -1;
+		final var offsetY = (int) Math.min(from.minY(), 0) * -1;
+		final var clone = create(type, (int) from.maxY() + 1 + offsetY, (int) from.maxX() + 1 + offsetX);
+		clone.fill(defaultValue);
+		from.fields()
+			.stream()
+			.forEach(f -> clone.setValue(f.position().down(offsetY).right(offsetX), f.value()));
+		return clone;
+	}
+
 	public void setValue(final Point2D<Integer> p, final T value) {
 		setValue(p.getX(), p.getY(), value);
 	}
@@ -142,8 +155,8 @@ public class FixGrid<T> {
 	public FixGrid<T> sub(final Point2D<Integer> topLeft, final Point2D<Integer> bottomRight) {
 		final var offsetY = Math.max(topLeft.getY(), 0);
 		final var offsetX = Math.max(topLeft.getX(), 0);
-		final var limitY = Math.min(bottomRight.getY(), getHeight()-1);
-		final var limitX = Math.min(bottomRight.getX(), getWidth()-1);
+		final var limitY = Math.min(bottomRight.getY(), getHeight() - 1);
+		final var limitX = Math.min(bottomRight.getX(), getWidth() - 1);
 		final var result = FixGrid.create(
 				type,
 				limitY - offsetY,

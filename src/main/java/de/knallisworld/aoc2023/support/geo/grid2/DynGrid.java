@@ -2,21 +2,23 @@ package de.knallisworld.aoc2023.support.geo.grid2;
 
 import de.knallisworld.aoc2023.support.geo.Point2D;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Comparator.comparing;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 
 public class DynGrid<P extends Number, T> {
 
 	final Map<Point2D<P>, T> data;
+
+	final Set<P> validX;
+	final Set<P> validY;
 
 	public static <P extends Number, T> DynGrid<P, T> empty() {
 		return new DynGrid<>(new HashMap<>());
@@ -32,33 +34,82 @@ public class DynGrid<P extends Number, T> {
 
 	public DynGrid(final Map<Point2D<P>, T> data) {
 		this.data = data;
+		this.validX = new HashSet<>();
+		this.validY = new HashSet<>();
+		data.keySet()
+			.forEach(p0 -> {
+				validX.add(p0.getX());
+				validY.add(p0.getX());
+			});
 	}
 
 	public boolean has(final Point2D<P> p) {
+		if (!validX.contains(p.getX())) {
+			return false;
+		}
+		if (!validY.contains(p.getY())) {
+			return false;
+		}
 		return data.containsKey(p);
+	}
+
+	public boolean has(final P x, final P y) {
+		if (!validX.contains(x)) {
+			return false;
+		}
+		if (!validY.contains(y)) {
+			return false;
+		}
+		return has(Point2D.create(x, y));
 	}
 
 	public void setValue(final Point2D<P> p,
 						 final T value) {
 		data.put(p, value);
+		validX.add(p.getX());
+		validY.add(p.getY());
 	}
 
 	public void clearValue(final Point2D<P> p) {
 		data.remove(p);
+		validX.clear();
+		validY.clear();
+		data.keySet()
+			.forEach(p0 -> {
+				validX.add(p0.getX());
+				validY.add(p0.getX());
+			});
 	}
 
 	public T getValueRequired(final Point2D<P> p) {
+		if (!has(p)) {
+			throw new NullPointerException();
+		}
 		return requireNonNull(data.get(p));
 	}
 
 
 	public Optional<T> getValue(final Point2D<P> p) {
+		if (!has(p)) {
+			return Optional.empty();
+		}
 		return Optional.ofNullable(data.get(p));
 	}
 
+	public Optional<T> getValue(final P x, final P y) {
+		if (!has(x, y)) {
+			return Optional.empty();
+		}
+		return getValue(Point2D.create(x, y));
+	}
+
 	public Stream<Point2D<P>> getAdjacents4(final Point2D<P> p) {
+		return getAdjacents4(p, false);
+	}
+
+	public Stream<Point2D<P>> getAdjacents4(final Point2D<P> p, final boolean includeEmpty) {
 		return p.getAdjacents4()
-				.filter(this::has);
+				.filter(p1 -> includeEmpty || has(p1));
 	}
 
 	public Stream<Point2D<P>> getAdjacents8(final Point2D<P> p) {
@@ -248,6 +299,13 @@ public class DynGrid<P extends Number, T> {
 					  .map(e -> new Field<>(e.getKey(), e.getValue()));
 		}
 
+		public Stream<FieldsView.Field<P, T>> streamDirect() {
+			return grid.data
+					.entrySet()
+					.stream()
+					.map(e -> new Field<>(e.getKey(), e.getValue()));
+		}
+
 		public Stream<Row<P, T>> rows() {
 			final var minX = grid.getMinX();
 			final var maxX = grid.getMaxX();
@@ -280,6 +338,41 @@ public class DynGrid<P extends Number, T> {
 									 list
 							 );
 						 });
+		}
+
+		public Stream<Point2D<P>> getCluster4(final Point2D<P> p,
+											  final Predicate<Field<P, T>> filter) {
+
+			final var cluster = new HashSet<Point2D<P>>();
+			final var q = new LinkedList<Point2D<P>>();
+			q.add(p);
+			while (!q.isEmpty()) {
+				final var n = q.pop();
+				cluster.add(n);
+				grid.getAdjacents4(n)
+					.filter(not(cluster::contains))
+					.filter(not(q::contains))
+					.filter(a -> filter.test(new Field<>(a, grid.getValueRequired(a))))
+					.forEach(q::add);
+			}
+			return cluster.stream();
+		}
+
+		public Stream<Point2D<P>> getCluster4All(final Point2D<P> p,
+												 final Predicate<Field<P, Optional<T>>> filter) {
+
+			final var cluster = new HashSet<Point2D<P>>();
+			final var q = new LinkedList<Point2D<P>>();
+			q.add(p);
+			while (!q.isEmpty()) {
+				final var n = q.pop();
+				cluster.add(n);
+				grid.getAdjacents4(n, true)
+					.filter(not(cluster::contains))
+					.filter(a -> filter.test(new Field<>(a, grid.getValue(a))))
+					.forEach(q::add);
+			}
+			return cluster.stream();
 		}
 
 	}
