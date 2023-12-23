@@ -5,17 +5,12 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Optional;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
+import java.util.*;
+import java.util.function.*;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static java.lang.Math.floorMod;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 
@@ -100,6 +95,16 @@ public class FixGrid<T> {
 			.stream()
 			.forEach(f -> clone.setValue(f.position().down(offsetY).right(offsetX), f.value()));
 		return clone;
+	}
+
+	public static <T> FixGrid<T> parseBySymbols2D(final Class<T> type, final List<String> lines, final Function<Character, T> decoder) {
+		final var grid = FixGrid.create(type, lines.size(), lines.getFirst().length());
+		for (int y = 0; y < lines.size(); y++) {
+			for (int x = 0; x < lines.get(y).length(); x++) {
+				grid.setValue(x, y, decoder.apply(lines.get(y).charAt(x)));
+			}
+		}
+		return grid;
 	}
 
 	public void setValue(final Point2D<Integer> p, final T value) {
@@ -211,7 +216,7 @@ public class FixGrid<T> {
 		public Stream<Field<T>> row(final int searchY) {
 			return IntStream
 					.range(0, grid.data.length)
-					.filter(y -> y == searchY)
+					.filter(y -> y == floorMod(searchY, grid.data.length))
 					.boxed()
 					.flatMap(y -> IntStream
 							.range(0, grid.data[y].length)
