@@ -22,6 +22,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!-- dependencies -->
+        <commons-geometry.version>1.0</commons-geometry.version>
         <jgrapht-core.version>1.5.2</jgrapht-core.version>
         <log4j.version>2.22.0</log4j.version>
     </properties>
@@ -43,6 +44,22 @@
                 <artifactId>log4j-core</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-geometry-core</artifactId>
+                <version>${commons-geometry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-geometry-io-core</artifactId>
+                <version>${commons-geometry.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-geometry-io-euclidean</artifactId>
+                <version>${commons-geometry.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -73,6 +90,17 @@
             <groupId>org.jgrapht</groupId>
             <artifactId>jgrapht-core</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-geometry-io-euclidean</artifactId>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.microsoft.z3/java-jar -->
+        <dependency>
+            <groupId>com.microsoft.z3</groupId>
+            <artifactId>java-jar</artifactId>
+            <version>4.11.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -104,5 +132,15 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>itemis</id>
+            <url>https://artifacts.itemis.cloud/repository/maven-mps/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
 
 </project>
