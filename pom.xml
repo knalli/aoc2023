@@ -94,11 +94,10 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-geometry-io-euclidean</artifactId>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/com.microsoft.z3/java-jar -->
         <dependency>
-            <groupId>com.microsoft.z3</groupId>
-            <artifactId>java-jar</artifactId>
-            <version>4.11.2</version>
+            <groupId>tools.aqua</groupId>
+            <artifactId>z3-turnkey</artifactId>
+            <version>4.12.2.1</version>
         </dependency>
 
     </dependencies>
@@ -132,15 +131,5 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>itemis</id>
-            <url>https://artifacts.itemis.cloud/repository/maven-mps/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-    </repositories>
 
 </project>
